@@ -1,0 +1,44 @@
+name: Release
+
+on:
+    push:
+        branches:
+            - main
+
+permissions:
+    contents: write
+
+jobs:
+    bump_version:
+        if: "!startsWith(github.event.head_commit.message, 'bump:')"
+        runs-on: ubuntu-latest
+        name: "Bump version and create changelog with commitizen"
+        steps:
+            - name: Check out
+              uses: actions/checkout@v5
+              with:
+                  fetch-depth: 0
+                  token: "${{ secrets.GITHUB_TOKEN }}"
+
+            - name: Create bump and changelog
+              id: cz
+              uses: commitizen-tools/commitizen-action@master
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  changelog_increment_filename: body.md
+
+            - name: Print Version
+              run: echo "Bumped to version ${{ steps.cz.outputs.version }}"
+
+            - name: Prepare release artifact
+              run: |
+                  cp LICENSE README.md bean/
+                  zip -r "bean-${{ steps.cz.outputs.version }}.zip" bean
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: "bean-${{ steps.cz.outputs.version }}.zip"
+                  tag_name: "${{ steps.cz.outputs.version }}"
+                  body_path: "body.md"
+                  token: ${{ secrets.GITHUB_TOKEN }}
