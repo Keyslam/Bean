@@ -1,3 +1,7 @@
+local PATH = (...):match('(.-bean%.)')
+
+local Archetype = require(PATH .. 'archetype')
+
 local ScenePrototype = {}
 local ScenePrototypeMt = { __index = ScenePrototype }
 
@@ -14,6 +18,11 @@ function ScenePrototype:addEntity(componentSpecs)
         local definition = componentSpec.componentType.definition()
         definition.init(entity, unpack(componentSpec.args))
     end
+
+    local archetype = Archetype.fromComponentSpecs(componentSpecs)
+
+    entity.__archetype = archetype
+    setmetatable(entity, archetype.__mt)
 
     return entity
 end
