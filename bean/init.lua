@@ -27,4 +27,10 @@ local Bean = {
     ]],
 }
 
+local Scene = require(PATH .. '.scene')
+local Component = require(PATH .. '.component')
+
+Bean.newScene = Scene.newScene
+Bean.newComponentType = Component.newComponentType
+
 return Bean
