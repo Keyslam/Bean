@@ -7,9 +7,36 @@ local ComponentFactoryPrototypeMt = {
     end,
 }
 
+local ignoredMethods = {
+    ['id'] = true,
+    ['init'] = true,
+}
+
+local function extractMethods(definition)
+    local methods = {}
+
+    for key, value in pairs(definition) do
+        if type(value) ~= 'function' then
+            goto continue
+        end
+
+        if ignoredMethods[key] then
+            goto continue
+        end
+
+        methods[key] = value
+
+        ::continue::
+    end
+
+    return methods
+end
+
 local function newComponentType(definition)
     local componentType = setmetatable({
-        definition = definition,
+        id = definition.id,
+        init = definition.init,
+        methods = extractMethods(definition),
     }, ComponentFactoryPrototypeMt)
 
     return componentType

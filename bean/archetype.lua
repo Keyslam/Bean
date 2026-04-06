@@ -1,14 +1,9 @@
-local ignoredFields = {
-    ['id'] = true,
-    ['init'] = true,
-}
-
 local archetypeRegistry = {}
 local keys = {}
 
 local function fromComponentSpecs(componentSpecs)
     for i = 1, #componentSpecs do
-        keys[i] = componentSpecs[i].componentType.definition.id
+        keys[i] = componentSpecs[i].componentType.id
     end
 
     for i = #componentSpecs + 1, #keys do
@@ -26,11 +21,8 @@ local function fromComponentSpecs(componentSpecs)
     archetype.__mt = { __index = archetype }
 
     for _, componentSpec in ipairs(componentSpecs) do
-        local definition = componentSpec.componentType.definition
-        for key, value in pairs(definition) do
-            if not ignoredFields[key] then
-                archetype[key] = value
-            end
+        for name, fn in pairs(componentSpec.componentType.methods) do
+            archetype[name] = fn
         end
     end
     archetypeRegistry[cacheKey] = archetype

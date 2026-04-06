@@ -15,8 +15,7 @@ function ScenePrototype:addEntity(componentSpecs)
     local entity = {}
 
     for _, componentSpec in ipairs(componentSpecs) do
-        local definition = componentSpec.componentType.definition
-        definition.init(entity, unpack(componentSpec.args))
+        componentSpec.componentType.init(entity, unpack(componentSpec.args))
     end
 
     local archetype = Archetype.fromComponentSpecs(componentSpecs)
