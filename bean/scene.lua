@@ -15,7 +15,7 @@ function ScenePrototype:addEntity(componentSpecs)
     local entity = {}
 
     for _, componentSpec in ipairs(componentSpecs) do
-        local definition = componentSpec.componentType.definition()
+        local definition = componentSpec.componentType.definition
         definition.init(entity, unpack(componentSpec.args))
     end
 
