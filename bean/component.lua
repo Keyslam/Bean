@@ -1,5 +1,4 @@
 local ComponentTypePrototype = {}
-
 local ComponentFactoryPrototypeMt = {
     __index = ComponentTypePrototype,
     __call = function(self, ...)
@@ -7,8 +6,16 @@ local ComponentFactoryPrototypeMt = {
     end,
 }
 
+local nextComponentId = 1
+
+local function getNextComponentId()
+    local id = nextComponentId
+    nextComponentId = nextComponentId + 1
+
+    return id
+end
+
 local ignoredMethods = {
-    ['id'] = true,
     ['init'] = true,
 }
 
@@ -24,7 +31,10 @@ local function extractMethods(definition)
             goto continue
         end
 
-        methods[key] = value
+        table.insert(methods, {
+            name = key,
+            fn = value,
+        })
 
         ::continue::
     end
@@ -34,9 +44,10 @@ end
 
 local function newComponentType(definition)
     local componentType = setmetatable({
-        id = definition.id,
-        init = definition.init,
+        id = getNextComponentId(),
         methods = extractMethods(definition),
+
+        init = definition.init,
     }, ComponentFactoryPrototypeMt)
 
     return componentType

@@ -1,7 +1,7 @@
 local archetypeRegistry = {}
 local keys = {}
 
-local function fromComponentSpecs(componentSpecs)
+local function createKey(componentSpecs)
     for i = 1, #componentSpecs do
         keys[i] = componentSpecs[i].componentType.id
     end
@@ -11,23 +11,33 @@ local function fromComponentSpecs(componentSpecs)
     end
 
     table.sort(keys)
-    local cacheKey = table.concat(keys, '|')
 
-    if archetypeRegistry[cacheKey] then
-        return archetypeRegistry[cacheKey]
-    end
+    return table.concat(keys, '|')
+end
 
+local function newArchetype(componentSpecs, key)
     local archetype = {}
     archetype.__mt = { __index = archetype }
 
     for _, componentSpec in ipairs(componentSpecs) do
-        for name, fn in pairs(componentSpec.componentType.methods) do
-            archetype[name] = fn
+        local methods = componentSpec.componentType.methods
+        for _, method in ipairs(methods) do
+            archetype[method.name] = method.fn
         end
     end
-    archetypeRegistry[cacheKey] = archetype
+    archetypeRegistry[key or createKey(componentSpecs)] = archetype
 
     return archetype
+end
+
+local function fromComponentSpecs(componentSpecs)
+    local key = createKey(componentSpecs)
+
+    if archetypeRegistry[key] then
+        return archetypeRegistry[key]
+    end
+
+    return newArchetype(componentSpecs, key)
 end
 
 return {
