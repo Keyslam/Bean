@@ -15,8 +15,8 @@ local function createKey(componentSpecs)
     return table.concat(keys, '|')
 end
 
-local function newArchetype(componentSpecs, key)
-    local archetype = {}
+local function newArchetype(componentSpecs, key, prototype)
+    local archetype = setmetatable({}, prototype.__mt)
     archetype.__mt = { __index = archetype }
 
     for _, componentSpec in ipairs(componentSpecs) do
@@ -30,14 +30,14 @@ local function newArchetype(componentSpecs, key)
     return archetype
 end
 
-local function fromComponentSpecs(componentSpecs)
+local function fromComponentSpecs(componentSpecs, prototype)
     local key = createKey(componentSpecs)
 
     if archetypeRegistry[key] then
         return archetypeRegistry[key]
     end
 
-    return newArchetype(componentSpecs, key)
+    return newArchetype(componentSpecs, key, prototype)
 end
 
 return {

@@ -1,5 +1,5 @@
 local ComponentTypePrototype = {}
-local ComponentFactoryPrototypeMt = {
+ComponentTypePrototype.__mt = {
     __index = ComponentTypePrototype,
     __call = function(self, ...)
         return self:spec(...)
@@ -48,7 +48,7 @@ local function newComponentType(definition)
         methods = extractMethods(definition),
 
         init = definition.init,
-    }, ComponentFactoryPrototypeMt)
+    }, ComponentTypePrototype.__mt)
 
     return componentType
 end
