@@ -1,5 +1,6 @@
 local PATH = (...):match('(.-bean%.)')
 
+local SparseSet = require(PATH .. 'sparse-set')
 local Archetype = require(PATH .. 'archetype')
 
 local EntityPrototype = {}
@@ -14,6 +15,7 @@ local function newEntity(parent, componentSpecs, tags)
         __parent = parent,
         __children = {},
         __tags = {},
+        __tagIndex = {},
         __archetype = archetype,
     }, archetype.__mt)
 
@@ -22,8 +24,9 @@ local function newEntity(parent, componentSpecs, tags)
     end
 
     for _, tag in ipairs(tags) do
-        entity.__tags[tag] = true
+        entity:tag(tag)
     end
+    entity:tag(WildcardTag)
 
     return entity
 end
@@ -56,18 +59,70 @@ end
 
 function EntityPrototype:tag(tag)
     self.__tags[tag] = true
+    self:__addToTagIndex(self, tag)
+
+    if self.__parent then
+        self.__parent:__notifyTagWasAddedToChild(self, tag)
+    end
 end
 
 function EntityPrototype:untag(tag)
     self.__tags[tag] = nil
+    self:__removeFromTagIndex(self, tag)
+
+    if self.__parent then
+        self.__parent:__notifyTagWasRemovedFromChild(self, tag)
+    end
 end
 
 function EntityPrototype:is(tag)
-    if tag == WildcardTag then
-        return true
+    return self.__tags[tag] == true
+end
+
+function EntityPrototype:get(tag)
+    if self.__tagIndex[tag] then
+        return self.__tagIndex[tag]:values()
     end
 
-    return self.__tags[tag] == true
+    return {}
+end
+
+function EntityPrototype:__notifyTagWasAddedToChild(child, tag)
+    self:__addToTagIndex(child, tag)
+
+    if self.__parent then
+        self.__parent:__notifyTagWasAddedToChild(child, tag)
+    end
+end
+
+function EntityPrototype:__notifyTagWasRemovedFromChild(child, tag)
+    self:__removeFromTagIndex(child, tag)
+
+    if self.__parent then
+        self.__parent:__notifyTagWasRemovedFromChild(child, tag)
+    end
+end
+
+function EntityPrototype:__addToTagIndex(entity, tag)
+    local bucket = self.__tagIndex[tag]
+    if not bucket then
+        bucket = SparseSet.newSparseSet()
+        self.__tagIndex[tag] = bucket
+    end
+
+    bucket:add(entity)
+end
+
+function EntityPrototype:__removeFromTagIndex(entity, tag)
+    local bucket = self.__tagIndex[tag]
+    if not bucket then
+        return
+    end
+
+    bucket:remove(entity)
+    if bucket:isEmpty() then
+        self.__tagIndex[tag] = nil
+    end
 end
 
 return {
