@@ -13,8 +13,8 @@ local function newEntity(parent, componentSpecs, tags)
 
     local entity = setmetatable({
         __parent = parent,
-        __children = {},
-        __tags = {},
+        __children = SparseSet.newSparseSet(),
+        __tags = SparseSet.newSparseSet(),
         __tagIndex = {},
         __archetype = archetype,
     }, archetype.__mt)
@@ -52,13 +52,13 @@ function EntityPrototype:addEntity(componentSpecsAndTags)
     local componentSpecs, tags = extractComponentSpecsAndTags(componentSpecsAndTags)
 
     local entity = newEntity(self, componentSpecs, tags)
-    table.insert(self.__children, entity)
+    self.__children:add(entity)
 
     return entity
 end
 
 function EntityPrototype:tag(tag)
-    self.__tags[tag] = true
+    self.__tags:add(tag)
     self:__addToTagIndex(self, tag)
 
     if self.__parent then
@@ -67,7 +67,7 @@ function EntityPrototype:tag(tag)
 end
 
 function EntityPrototype:untag(tag)
-    self.__tags[tag] = nil
+    self.__tags:remove(tag)
     self:__removeFromTagIndex(self, tag)
 
     if self.__parent then
@@ -76,7 +76,7 @@ function EntityPrototype:untag(tag)
 end
 
 function EntityPrototype:is(tag)
-    return self.__tags[tag] == true
+    return self.__tags:contains(tag)
 end
 
 function EntityPrototype:get(tag)
@@ -85,6 +85,17 @@ function EntityPrototype:get(tag)
     end
 
     return {}
+end
+
+function EntityPrototype:destroy()
+    while not self.__children:isEmpty() do
+        local lastChild = self.__children:peek()
+        lastChild:destroy()
+    end
+
+    if self.__parent then
+        self.__parent:__notifyChildWasDestroyed(self)
+    end
 end
 
 function EntityPrototype:__notifyTagWasAddedToChild(child, tag)
@@ -100,6 +111,20 @@ function EntityPrototype:__notifyTagWasRemovedFromChild(child, tag)
 
     if self.__parent then
         self.__parent:__notifyTagWasRemovedFromChild(child, tag)
+    end
+end
+
+function EntityPrototype:__notifyChildWasDestroyed(child, isGrandchild)
+    if not isGrandchild then
+        self.__children:remove(child)
+    end
+
+    for _, tag in ipairs(child.__tags:values()) do
+        self:__removeFromTagIndex(child, tag)
+    end
+
+    if self.__parent then
+        self.__parent:__notifyChildWasDestroyed(child, true)
     end
 end
 

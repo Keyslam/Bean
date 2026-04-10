@@ -52,6 +52,10 @@ function SparseSetPrototype:isEmpty()
     return self.count == 0
 end
 
+function SparseSetPrototype:peek()
+    return self.dense[#self.dense]
+end
+
 return {
     newSparseSet = newSparseSet,
 }
