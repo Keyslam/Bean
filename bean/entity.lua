@@ -119,6 +119,30 @@ function EntityPrototype:emit(eventName, ...)
     return self
 end
 
+function EntityPrototype:broadcast(eventName, ...)
+    self:__handleBroadcast(self, eventName, ...)
+
+    return self
+end
+
+function EntityPrototype:__handleBroadcast(entity, eventName, ...)
+    for _, child in ipairs(self.__children:values()) do
+        child:__handleBroadcast(entity, eventName, ...)
+    end
+
+    local handlers = self.__events[eventName]
+    if handlers then
+        for _, tag in ipairs(entity.__tags:values()) do
+            local tagHandlers = handlers[tag]
+            if tagHandlers then
+                for _, handler in ipairs(tagHandlers) do
+                    handler(self, entity, ...)
+                end
+            end
+        end
+    end
+end
+
 function EntityPrototype:__handleEmit(entity, eventName, ...)
     local handlers = self.__events[eventName]
     if handlers then
