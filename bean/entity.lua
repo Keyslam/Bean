@@ -16,6 +16,7 @@ local function newEntity(parent, componentSpecs, tags)
         __children = SparseSet.newSparseSet(),
         __tags = SparseSet.newSparseSet(),
         __tagIndex = {},
+        __events = {},
         __archetype = archetype,
     }, archetype.__mt)
 
@@ -85,6 +86,46 @@ function EntityPrototype:get(tag)
     end
 
     return {}
+end
+
+function EntityPrototype:on(eventName, tagOrHandler, handler)
+    local tag = tagOrHandler
+    if handler == nil then
+        handler = tagOrHandler
+        tag = WildcardTag
+    end
+
+    if not self.__events[eventName] then
+        self.__events[eventName] = {}
+    end
+
+    if not self.__events[eventName][tag] then
+        self.__events[eventName][tag] = {}
+    end
+
+    table.insert(self.__events[eventName][tag], handler)
+end
+
+function EntityPrototype:emit(eventName, ...)
+    self:__handleEmit(self, eventName, ...)
+end
+
+function EntityPrototype:__handleEmit(entity, eventName, ...)
+    local handlers = self.__events[eventName]
+    if handlers then
+        for _, tag in ipairs(entity.__tags:values()) do
+            local tagHandlers = handlers[tag]
+            if tagHandlers then
+                for _, handler in ipairs(tagHandlers) do
+                    handler(self, entity, ...)
+                end
+            end
+        end
+    end
+
+    if self.__parent then
+        self.__parent:__handleEmit(entity, eventName, ...)
+    end
 end
 
 function EntityPrototype:destroy()
