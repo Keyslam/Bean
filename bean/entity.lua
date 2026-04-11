@@ -7,6 +7,7 @@ local EntityPrototype = {}
 EntityPrototype.__mt = { __index = EntityPrototype }
 
 local WildcardTag = '*'
+local EmptyTagList = {}
 
 local function newEntity(parent, componentSpecs, tags)
     local archetype = Archetype.fromComponentSpecs(componentSpecs, EntityPrototype)
@@ -65,6 +66,8 @@ function EntityPrototype:tag(tag)
     if self.__parent then
         self.__parent:__notifyTagWasAddedToChild(self, tag)
     end
+
+    return self
 end
 
 function EntityPrototype:untag(tag)
@@ -74,6 +77,8 @@ function EntityPrototype:untag(tag)
     if self.__parent then
         self.__parent:__notifyTagWasRemovedFromChild(self, tag)
     end
+
+    return self
 end
 
 function EntityPrototype:is(tag)
@@ -85,7 +90,7 @@ function EntityPrototype:get(tag)
         return self.__tagIndex[tag]:values()
     end
 
-    return {}
+    return EmptyTagList
 end
 
 function EntityPrototype:on(eventName, tagOrHandler, handler)
@@ -104,10 +109,14 @@ function EntityPrototype:on(eventName, tagOrHandler, handler)
     end
 
     table.insert(self.__events[eventName][tag], handler)
+
+    return self
 end
 
 function EntityPrototype:emit(eventName, ...)
     self:__handleEmit(self, eventName, ...)
+
+    return self
 end
 
 function EntityPrototype:__handleEmit(entity, eventName, ...)
@@ -137,6 +146,8 @@ function EntityPrototype:destroy()
     if self.__parent then
         self.__parent:__notifyChildWasDestroyed(self)
     end
+
+    return self
 end
 
 function EntityPrototype:__notifyTagWasAddedToChild(child, tag)
@@ -160,12 +171,16 @@ function EntityPrototype:__notifyChildWasDestroyed(child, isGrandchild)
         self.__children:remove(child)
     end
 
-    for _, tag in ipairs(child.__tags:values()) do
-        self:__removeFromTagIndex(child, tag)
-    end
+    self:__pruneTagsForEntity(child)
 
     if self.__parent then
         self.__parent:__notifyChildWasDestroyed(child, true)
+    end
+end
+
+function EntityPrototype:__pruneTagsForEntity(entity)
+    for _, tag in ipairs(entity.__tags:values()) do
+        self:__removeFromTagIndex(entity, tag)
     end
 end
 
