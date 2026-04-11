@@ -143,6 +143,10 @@ function EntityPrototype:destroy()
         lastChild:destroy()
     end
 
+    for _, componentType in ipairs(self.__archetype.componentTypes) do
+        componentType.destroy(self)
+    end
+
     if self.__parent then
         self.__parent:__notifyChildWasDestroyed(self)
     end

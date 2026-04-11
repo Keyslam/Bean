@@ -16,10 +16,14 @@ local function createKey(componentSpecs)
 end
 
 local function newArchetype(componentSpecs, key, prototype)
-    local archetype = setmetatable({}, prototype.__mt)
+    local archetype = setmetatable({
+        componentTypes = {},
+    }, prototype.__mt)
     archetype.__mt = { __index = archetype }
 
     for _, componentSpec in ipairs(componentSpecs) do
+        table.insert(archetype.componentTypes, componentSpec.componentType)
+
         local methods = componentSpec.componentType.methods
         for _, method in ipairs(methods) do
             archetype[method.name] = method.fn

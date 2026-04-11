@@ -6,17 +6,19 @@ ComponentTypePrototype.__mt = {
     end,
 }
 
-local nextComponentId = 1
+local NextComponentId = 1
+local EmptyFunction = function() end
 
 local function getNextComponentId()
-    local id = nextComponentId
-    nextComponentId = nextComponentId + 1
+    local id = NextComponentId
+    NextComponentId = NextComponentId + 1
 
     return id
 end
 
 local ignoredMethods = {
     ['init'] = true,
+    ['destroy'] = true,
 }
 
 local function extractMethods(definition)
@@ -47,7 +49,8 @@ local function newComponentType(definition)
         id = getNextComponentId(),
         methods = extractMethods(definition),
 
-        init = definition.init,
+        init = definition.init or EmptyFunction,
+        destroy = definition.destroy or EmptyFunction,
     }, ComponentTypePrototype.__mt)
 
     return componentType
