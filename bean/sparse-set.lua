@@ -8,6 +8,8 @@ local function newSparseSet()
         count = 0,
         dense = {},
         sparse = {},
+        snapshot = {},
+        snapshot_dirty = true,
     }, SparseSetPrototype.__mt)
 end
 
@@ -17,6 +19,8 @@ function SparseSetPrototype:add(value)
     self.dense[index] = value
     self.sparse[value] = index
     self.count = self.count + 1
+
+    self.snapshot_dirty = true
 end
 
 function SparseSetPrototype:remove(value)
@@ -34,6 +38,8 @@ function SparseSetPrototype:remove(value)
     self.dense[self.count] = nil
     self.count = self.count - 1
     self.sparse[value] = nil
+
+    self.snapshot_dirty = true
 end
 
 function SparseSetPrototype:has(value)
@@ -41,7 +47,21 @@ function SparseSetPrototype:has(value)
 end
 
 function SparseSetPrototype:values()
-    return self.dense
+    if not self.snapshot_dirty then
+        return self.snapshot
+    end
+
+    for i = 1, self.count do
+        self.snapshot[i] = self.dense[i]
+    end
+
+    for i = self.count + 1, #self.snapshot do
+        self.snapshot[i] = nil
+    end
+
+    self.snapshot_dirty = false
+
+    return self.snapshot
 end
 
 function SparseSetPrototype:count()
