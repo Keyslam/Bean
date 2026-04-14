@@ -23,6 +23,10 @@ local function newEntity(parent, componentSpecs, tags)
 
     for _, componentSpec in ipairs(componentSpecs) do
         componentSpec.componentType.init(entity, unpack(componentSpec.args))
+
+        for _, event in ipairs(componentSpec.componentType.events) do
+            entity:on(event.name, event.tag or WildcardTag, event.fn)
+        end
     end
 
     for _, tag in ipairs(tags) do

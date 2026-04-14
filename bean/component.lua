@@ -44,10 +44,53 @@ local function extractMethods(definition)
     return methods
 end
 
+local function extractEvents(definition)
+    local events = {}
+
+    if not definition.on then
+        return events
+    end
+
+    for key, fnOrTable in pairs(definition.on) do
+        if type(fnOrTable) == 'function' then
+            local name = key
+            local fn = fnOrTable
+
+            table.insert(events, {
+                name = name,
+                fn = fn,
+                tag = nil,
+            })
+        end
+
+        if type(fnOrTable) == 'table' then
+            local eventDefinition = fnOrTable
+
+            local name = eventDefinition[1]
+            local tag = eventDefinition[2]
+            local fn = eventDefinition[3]
+
+            if fn == nil then
+                tag = nil
+                fn = eventDefinition[2]
+            end
+
+            table.insert(events, {
+                name = name,
+                fn = fn,
+                tag = tag,
+            })
+        end
+    end
+
+    return events
+end
+
 local function newComponentType(definition)
     local componentType = setmetatable({
         id = getNextComponentId(),
         methods = extractMethods(definition),
+        events = extractEvents(definition),
 
         init = definition.init or EmptyFunction,
         destroy = definition.destroy or EmptyFunction,
