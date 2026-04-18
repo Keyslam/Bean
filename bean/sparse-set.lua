@@ -5,75 +5,67 @@ SparseSetPrototype.__mt = {
 
 local function newSparseSet()
     return setmetatable({
-        count = 0,
-        dense = {},
-        sparse = {},
-        snapshot = {},
-        snapshot_dirty = true,
+        _count = 0,
+        _dense = {},
+        _sparse = {},
+        _snapshot = {},
+        _snapshot_dirty = true,
     }, SparseSetPrototype.__mt)
 end
 
 function SparseSetPrototype:add(value)
-    local index = self.count + 1
+    local index = self._count + 1
 
-    self.dense[index] = value
-    self.sparse[value] = index
-    self.count = self.count + 1
+    self._dense[index] = value
+    self._sparse[value] = index
+    self._count = self._count + 1
 
-    self.snapshot_dirty = true
+    self._snapshot_dirty = true
 end
 
 function SparseSetPrototype:remove(value)
-    local index = self.sparse[value]
+    local index = self._sparse[value]
 
     if not index then
         return
     end
 
-    local lastValue = self.dense[self.count]
+    local lastValue = self._dense[self._count]
 
-    self.dense[index] = lastValue
-    self.sparse[lastValue] = index
+    self._dense[index] = lastValue
+    self._sparse[lastValue] = index
 
-    self.dense[self.count] = nil
-    self.count = self.count - 1
-    self.sparse[value] = nil
+    self._dense[self._count] = nil
+    self._count = self._count - 1
+    self._sparse[value] = nil
 
-    self.snapshot_dirty = true
-end
-
-function SparseSetPrototype:has(value)
-    return self.sparse[value] ~= nil
+    self._snapshot_dirty = true
 end
 
 function SparseSetPrototype:values()
-    if not self.snapshot_dirty then
-        return self.snapshot
+    if not self._snapshot_dirty then
+        return self._snapshot
     end
 
-    for i = 1, self.count do
-        self.snapshot[i] = self.dense[i]
+    for i = 1, self._count do
+        self._snapshot[i] = self._dense[i]
     end
 
-    for i = self.count + 1, #self.snapshot do
-        self.snapshot[i] = nil
+    for i = self._count + 1, #self._snapshot do
+        self._snapshot[i] = nil
     end
 
-    self.snapshot_dirty = false
+    self._snapshot_dirty = false
 
-    return self.snapshot
-end
-
-function SparseSetPrototype:count()
-    return self.count
+    return self._snapshot
 end
 
 function SparseSetPrototype:isEmpty()
-    return self.count == 0
+    return self._count == 0
 end
 
 function SparseSetPrototype:peek()
-    return self.dense[#self.dense]
+    return self._dense[#self._dense]
 end
 
 return {

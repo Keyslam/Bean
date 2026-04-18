@@ -13,12 +13,12 @@ local function newEntity(parent, componentSpecs, tags)
     local archetype = Archetype.fromComponentSpecs(componentSpecs, EntityPrototype)
 
     local entity = setmetatable({
-        __parent = parent,
-        __children = SparseSet.newSparseSet(),
-        __tags = SparseSet.newSparseSet(),
-        __tagIndex = {},
-        __events = {},
-        __archetype = archetype,
+        _parent = parent,
+        _children = SparseSet.newSparseSet(),
+        _tags = SparseSet.newSparseSet(),
+        _tagIndex = {},
+        _events = {},
+        _archetype = archetype,
     }, archetype.__mt)
 
     for _, componentSpec in ipairs(componentSpecs) do
@@ -58,40 +58,40 @@ function EntityPrototype:addEntity(componentSpecsAndTags)
     local componentSpecs, tags = extractComponentSpecsAndTags(componentSpecsAndTags)
 
     local entity = newEntity(self, componentSpecs, tags)
-    self.__children:add(entity)
+    self._children:add(entity)
 
     return entity
 end
 
 function EntityPrototype:tag(tag)
-    self.__tags:add(tag)
-    self:__addToTagIndex(self, tag)
+    self._tags:add(tag)
+    self:_addToTagIndex(self, tag)
 
-    if self.__parent then
-        self.__parent:__notifyTagWasAddedToChild(self, tag)
+    if self._parent then
+        self._parent:_notifyTagWasAddedToChild(self, tag)
     end
 
     return self
 end
 
 function EntityPrototype:untag(tag)
-    self.__tags:remove(tag)
-    self:__removeFromTagIndex(self, tag)
+    self._tags:remove(tag)
+    self:_removeFromTagIndex(self, tag)
 
-    if self.__parent then
-        self.__parent:__notifyTagWasRemovedFromChild(self, tag)
+    if self._parent then
+        self._parent:_notifyTagWasRemovedFromChild(self, tag)
     end
 
     return self
 end
 
 function EntityPrototype:is(tag)
-    return self.__tags:contains(tag)
+    return self._tags:contains(tag)
 end
 
 function EntityPrototype:get(tag)
-    if self.__tagIndex[tag] then
-        return self.__tagIndex[tag]:values()
+    if self._tagIndex[tag] then
+        return self._tagIndex[tag]:values()
     end
 
     return EmptyTagList
@@ -104,39 +104,39 @@ function EntityPrototype:on(eventName, tagOrHandler, handler)
         tag = WildcardTag
     end
 
-    if not self.__events[eventName] then
-        self.__events[eventName] = {}
+    if not self._events[eventName] then
+        self._events[eventName] = {}
     end
 
-    if not self.__events[eventName][tag] then
-        self.__events[eventName][tag] = {}
+    if not self._events[eventName][tag] then
+        self._events[eventName][tag] = {}
     end
 
-    table.insert(self.__events[eventName][tag], handler)
+    table.insert(self._events[eventName][tag], handler)
 
     return self
 end
 
 function EntityPrototype:emit(eventName, ...)
-    self:__handleEmit(self, eventName, ...)
+    self:_handleEmit(self, eventName, ...)
 
     return self
 end
 
 function EntityPrototype:broadcast(eventName, ...)
-    self:__handleBroadcast(self, eventName, ...)
+    self:_handleBroadcast(self, eventName, ...)
 
     return self
 end
 
-function EntityPrototype:__handleBroadcast(entity, eventName, ...)
-    for _, child in ipairs(self.__children:values()) do
-        child:__handleBroadcast(entity, eventName, ...)
+function EntityPrototype:_handleBroadcast(entity, eventName, ...)
+    for _, child in ipairs(self._children:values()) do
+        child:_handleBroadcast(entity, eventName, ...)
     end
 
-    local handlers = self.__events[eventName]
+    local handlers = self._events[eventName]
     if handlers then
-        for _, tag in ipairs(entity.__tags:values()) do
+        for _, tag in ipairs(entity._tags:values()) do
             local tagHandlers = handlers[tag]
             if tagHandlers then
                 for _, handler in ipairs(tagHandlers) do
@@ -147,10 +147,10 @@ function EntityPrototype:__handleBroadcast(entity, eventName, ...)
     end
 end
 
-function EntityPrototype:__handleEmit(entity, eventName, ...)
-    local handlers = self.__events[eventName]
+function EntityPrototype:_handleEmit(entity, eventName, ...)
+    local handlers = self._events[eventName]
     if handlers then
-        for _, tag in ipairs(entity.__tags:values()) do
+        for _, tag in ipairs(entity._tags:values()) do
             local tagHandlers = handlers[tag]
             if tagHandlers then
                 for _, handler in ipairs(tagHandlers) do
@@ -160,81 +160,81 @@ function EntityPrototype:__handleEmit(entity, eventName, ...)
         end
     end
 
-    if self.__parent then
-        self.__parent:__handleEmit(entity, eventName, ...)
+    if self._parent then
+        self._parent:_handleEmit(entity, eventName, ...)
     end
 end
 
 function EntityPrototype:destroy()
-    while not self.__children:isEmpty() do
-        local lastChild = self.__children:peek()
+    while not self._children:isEmpty() do
+        local lastChild = self._children:peek()
         lastChild:destroy()
     end
 
-    for _, componentType in ipairs(self.__archetype.componentTypes) do
+    for _, componentType in ipairs(self._archetype.componentTypes) do
         componentType.destroy(self)
     end
 
-    if self.__parent then
-        self.__parent:__notifyChildWasDestroyed(self)
+    if self._parent then
+        self._parent:_notifyChildWasDestroyed(self)
     end
 
     return self
 end
 
-function EntityPrototype:__notifyTagWasAddedToChild(child, tag)
-    self:__addToTagIndex(child, tag)
+function EntityPrototype:_notifyTagWasAddedToChild(child, tag)
+    self:_addToTagIndex(child, tag)
 
-    if self.__parent then
-        self.__parent:__notifyTagWasAddedToChild(child, tag)
+    if self._parent then
+        self._parent:_notifyTagWasAddedToChild(child, tag)
     end
 end
 
-function EntityPrototype:__notifyTagWasRemovedFromChild(child, tag)
-    self:__removeFromTagIndex(child, tag)
+function EntityPrototype:_notifyTagWasRemovedFromChild(child, tag)
+    self:_removeFromTagIndex(child, tag)
 
-    if self.__parent then
-        self.__parent:__notifyTagWasRemovedFromChild(child, tag)
+    if self._parent then
+        self._parent:_notifyTagWasRemovedFromChild(child, tag)
     end
 end
 
-function EntityPrototype:__notifyChildWasDestroyed(child, isGrandchild)
+function EntityPrototype:_notifyChildWasDestroyed(child, isGrandchild)
     if not isGrandchild then
-        self.__children:remove(child)
+        self._children:remove(child)
     end
 
-    self:__pruneTagsForEntity(child)
+    self:_pruneTagsForEntity(child)
 
-    if self.__parent then
-        self.__parent:__notifyChildWasDestroyed(child, true)
-    end
-end
-
-function EntityPrototype:__pruneTagsForEntity(entity)
-    for _, tag in ipairs(entity.__tags:values()) do
-        self:__removeFromTagIndex(entity, tag)
+    if self._parent then
+        self._parent:_notifyChildWasDestroyed(child, true)
     end
 end
 
-function EntityPrototype:__addToTagIndex(entity, tag)
-    local bucket = self.__tagIndex[tag]
+function EntityPrototype:_pruneTagsForEntity(entity)
+    for _, tag in ipairs(entity._tags:values()) do
+        self:_removeFromTagIndex(entity, tag)
+    end
+end
+
+function EntityPrototype:_addToTagIndex(entity, tag)
+    local bucket = self._tagIndex[tag]
     if not bucket then
         bucket = SparseSet.newSparseSet()
-        self.__tagIndex[tag] = bucket
+        self._tagIndex[tag] = bucket
     end
 
     bucket:add(entity)
 end
 
-function EntityPrototype:__removeFromTagIndex(entity, tag)
-    local bucket = self.__tagIndex[tag]
+function EntityPrototype:_removeFromTagIndex(entity, tag)
+    local bucket = self._tagIndex[tag]
     if not bucket then
         return
     end
 
     bucket:remove(entity)
     if bucket:isEmpty() then
-        self.__tagIndex[tag] = nil
+        self._tagIndex[tag] = nil
     end
 end
 
