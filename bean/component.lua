@@ -52,7 +52,7 @@ local function extractEvents(definition, eventName, events)
             goto continue
         end
 
-        if value.__type == 'onSpec' then
+        if value._type == 'onSpec' then
             value.eventName = eventName or key
             table.insert(events, value)
         else

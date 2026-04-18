@@ -37,7 +37,7 @@ Bean.on = function(tagOrHandler, handler)
     return {
         tagOrHandler = tagOrHandler,
         handler = handler,
-        __type = 'onSpec',
+        _type = 'onSpec',
     }
 end
 
