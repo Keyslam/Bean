@@ -33,4 +33,12 @@ local Component = require(PATH .. '.component')
 Bean.newScene = Scene.newScene
 Bean.newComponentType = Component.newComponentType
 
+Bean.on = function(tagOrHandler, handler)
+    return {
+        tagOrHandler = tagOrHandler,
+        handler = handler,
+        __type = 'onSpec',
+    }
+end
+
 return Bean

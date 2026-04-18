@@ -44,43 +44,22 @@ local function extractMethods(definition)
     return methods
 end
 
-local function extractEvents(definition)
-    local events = {}
+local function extractEvents(definition, eventName, events)
+    events = events or {}
 
-    if not definition.on then
-        return events
-    end
-
-    for key, fnOrTable in pairs(definition.on) do
-        if type(fnOrTable) == 'function' then
-            local name = key
-            local fn = fnOrTable
-
-            table.insert(events, {
-                name = name,
-                fn = fn,
-                tag = nil,
-            })
+    for key, value in pairs(definition) do
+        if type(value) ~= 'table' then
+            goto continue
         end
 
-        if type(fnOrTable) == 'table' then
-            local eventDefinition = fnOrTable
-
-            local name = eventDefinition[1]
-            local tag = eventDefinition[2]
-            local fn = eventDefinition[3]
-
-            if fn == nil then
-                tag = nil
-                fn = eventDefinition[2]
-            end
-
-            table.insert(events, {
-                name = name,
-                fn = fn,
-                tag = tag,
-            })
+        if value.__type == 'onSpec' then
+            value.eventName = eventName or key
+            table.insert(events, value)
+        else
+            extractEvents(value, key, events)
         end
+
+        ::continue::
     end
 
     return events

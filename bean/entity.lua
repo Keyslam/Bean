@@ -25,7 +25,7 @@ local function newEntity(parent, componentSpecs, tags)
         componentSpec.componentType.init(entity, unpack(componentSpec.args))
 
         for _, event in ipairs(componentSpec.componentType.events) do
-            entity:on(event.name, event.tag or WildcardTag, event.fn)
+            entity:on(event.eventName, event.tagOrHandler, event.handler)
         end
     end
 
